@@ -1,5 +1,4 @@
-const hashToTest = 'Qmaisz6NMhDB51cCvNWa1GMS7LU1pAxdF4Ld6Ft9kZEP2a'
-const hashString = 'Hello from IPFS Gateway Checker'
+const hashToTest = 'QmPsVjJasZeSgNMwmti7Jap75yj8WvkcUNepDwgWmRea5b'
 
 const $results = document.querySelector('#results')
 
@@ -27,22 +26,44 @@ function checkGateways (gateways) {
   let checked = 0
   gateways.forEach((gateway) => {
     const gatewayAndHash = gateway.replace(':hash', hashToTest)
-    fetch(gatewayAndHash)
-      .then(res => res.text())
-      .then((text) => {
-        const matched = text.trim() === hashString.trim()
-        addNode(gatewayAndHash, matched, matched ? 'All good' : 'Output did not match expected output')
-        checked++
-        updateStats(total, checked)
-      }).catch((err) => {
-        window.err = err
-        addNode(gatewayAndHash, false, err)
-        checked++
-        updateStats(total, checked)
-      })
+    // fetch(gatewayAndHash)
+    //   .then(res => res.text())
+    //   .then((text) => {
+    //     const matched = text.trim() === hashString.trim()
+    //     addNode(gatewayAndHash, matched, matched ? 'All good' : 'Output did not match expected output')
+    //     checked++
+    //     updateStats(total, checked)
+    //   }).catch((err) => {
+    //     window.err = err
+    //     addNode(gatewayAndHash, false, err)
+    //     checked++
+    //     updateStats(total, checked)
+    //   })
+    
+    // lets just check status code
+    var request = new XMLHttpRequest();
+    request.open("HEAD", gatewayAndHash, true);
+    request.onerror = function(e) {
+      addNode(gatewayAndHash, false, 'Could not get headers')
+      checked++
+      updateStats(total, checked)
+    }
+    request.onreadystatechange = function() {
+      if(this.readyState === this.HEADERS_RECEIVED) {
+        if (this.status === 200) {
+          addNode(gatewayAndHash, true, this.getAllResponseHeaders())
+          checked++
+          updateStats(total, checked)
+        } else {
+          //console.log(this.status)
+        }
+      }
+    }
+    request.send();
   })
 }
 
+//fetch('https://skzap.github.io/public-gateway-checker/gateways.json')
 fetch('./gateways.json')
   .then(res => res.json())
   .then(gateways => checkGateways(gateways))
